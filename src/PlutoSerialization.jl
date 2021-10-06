@@ -89,7 +89,7 @@ The `Int` representing a Pluto workspace, or `nothing` if not valid.
 """
 function ws_number(name::Symbol)
     str = String(name)
-    m = match(r"^workspace(\d+)$", str)
+    m = match(r"^workspace[#]?(\d+)$", str)
     return isnothing(m) ? nothing : tryparse(Int, m[1])
 end
 ws_number(m::Module) = ws_number(nameof(m))
