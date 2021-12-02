@@ -64,7 +64,9 @@ deserialize(fn::AbstractString) = open(deserialize, fn)
 # workspace to exist.
 
 # A "marker" module used to represent a workspace module in the serialized output.
-const PlutoWorkspaces = Core.eval(Base.__toplevel__, :(module PlutoWorkspaces end))
+function __init__()
+    global PlutoWorkspaces = Core.eval(Base.__toplevel__, :(module PlutoWorkspaces end))
+end
 
 """
 Find all Pluto workspace modules and return an `id => mod` mapping for each.
