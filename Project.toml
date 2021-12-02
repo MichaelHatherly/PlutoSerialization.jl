@@ -1,7 +1,7 @@
 name = "PlutoSerialization"
 uuid = "89dfed0f-77d6-439b-aaac-839db4b25fb8"
 authors = ["Mike <michaelhatherly@gmail.com> and contributors"]
-version = "0.1.0"
+version = "0.1.1"
 
 [deps]
 Serialization = "9e88b42a-f829-5b0c-bbe9-9e923198166b"
