@@ -48,6 +48,11 @@ function deserialize end
 deserialize(io::IO) = Serialization.deserialize(PlutoSerializer(io))
 deserialize(fn::AbstractString) = open(deserialize, fn)
 
+# A mock top-level module to mark module references serialized in notebooks.
+baremodule PlutoWorkspaces end
+_parentmodule(m::Module) = m === PlutoWorkspaces ? PlutoWorkspaces : parentmodule(m)
+_root_module_key(m::Module) = m === PlutoWorkspaces ? Base.PkgId("PlutoWorkspaces") : Base.root_module_key(m)
+_root_module(pkgid::Base.PkgId) = Base.PkgId("PlutoWorkspaces") === pkgid ? PlutoWorkspaces : Base.root_module(pkgid)
 
 # Implementation:
 
@@ -62,11 +67,6 @@ deserialize(fn::AbstractString) = open(deserialize, fn)
 # available workspaces when deserializing objects to find the most recent
 # reference to the object name, rather than expecting the specific named
 # workspace to exist.
-
-# A "marker" module used to represent a workspace module in the serialized output.
-function __init__()
-    global PlutoWorkspaces = Core.eval(Base.__toplevel__, :(module PlutoWorkspaces end))
-end
 
 """
 Find all Pluto workspace modules and return an `id => mod` mapping for each.
@@ -140,9 +140,9 @@ function Serialization.serialize_mod_names(s::PlutoSerializer, m::Module)
     # Swap out the workspace module for a custom toplevel one that we control
     # to "mark" it as a workspace.
     m = haskey(s.workspaces, ws_number(m)) ? PlutoWorkspaces : m
-    p = parentmodule(m)
+    p = _parentmodule(m)
     if p === m || m === Base
-        key = Base.root_module_key(m)
+        key = _root_module_key(m)
         Serialization.serialize(s, key.uuid === nothing ? nothing : key.uuid.value)
         Serialization.serialize(s, Symbol(key.name))
     else
@@ -158,14 +158,14 @@ function Serialization.deserialize_module(s::PlutoSerializer)
         if mkey === ()
             return Main
         end
-        m = Base.root_module(mkey[1])
+        m = _root_module(mkey[1])
         for i = 2:length(mkey)
             m = getfield(m, mkey[i])::Module
         end
     else
         name = String(Serialization.deserialize(s)::Symbol)
         pkg = (mkey === nothing) ? Base.PkgId(name) : Base.PkgId(Base.UUID(mkey), name)
-        m = Base.root_module(pkg)
+        m = _root_module(pkg)
         mname = Serialization.deserialize(s)
         while mname !== ()
             if m === PlutoWorkspaces || is_workspace(m)
