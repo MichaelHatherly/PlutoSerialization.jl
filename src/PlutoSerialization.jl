@@ -97,11 +97,6 @@ end
 ws_number(m::Module) = ws_number(nameof(m))
 
 """
-Is the `Module` a valid Pluto workspace?
-"""
-is_workspace(m::Module) = !isnothing(ws_number(m)) && isdefined(m, :PlutoRunner)
-
-"""
 Check through workspace modules from most recent and find the first module in
 which the `name` is defined, that's *probably* the right one... otherwise just
 give up and return the `default` module instead.
@@ -168,9 +163,7 @@ function Serialization.deserialize_module(s::PlutoSerializer)
         m = _root_module(pkg)
         mname = Serialization.deserialize(s)
         while mname !== ()
-            if m === PlutoWorkspaces || is_workspace(m)
-                m = maybe_defined_in_workspace(s.workspaces, mname, m)
-            end
+            m = maybe_defined_in_workspace(s.workspaces, mname, m)
             m = getfield(m, mname)::Module
             mname = Serialization.deserialize(s)
         end
@@ -187,9 +180,7 @@ function Serialization.deserialize_datatype(s::PlutoSerializer, full::Bool)
     else
         name = Serialization.deserialize(s)::Symbol
         mod = Serialization.deserialize(s)::Module
-        if mod === PlutoWorkspaces || is_workspace(mod)
-            mod = maybe_defined_in_workspace(s.workspaces, name, mod)
-        end
+        mod = maybe_defined_in_workspace(s.workspaces, name, mod)
         ty = getfield(mod, name)
     end
     if isa(ty,DataType) && isempty(ty.parameters)
